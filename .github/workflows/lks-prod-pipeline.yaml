@@ -11,10 +11,10 @@ on:
 env:
   AWS_REGION: us-east-1                 
   ECR_REPOSITORY: voting-app 
-  ECS_SERVICE_WORKER: worker-service          
-  ECS_CLUSTER: demo-deploy
+  ECS_SERVICE_WORKER: lks-worker-service          
+  ECS_CLUSTER: lks-voting-cluster
   WORKER_TASK_DEFINITION: worker/task-definition.json
-  WORKER_CONTAINER_NAME: worker-container
+  WORKER_CONTAINER_NAME: lks-worker-container
   ENV: "prod"
 
 permissions:
