@@ -78,6 +78,5 @@
     },
     "registeredAt": "2026-03-05T03:42:24.317Z",
     "registeredBy": "arn:aws:sts::205122682501:assumed-role/voclabs/user4825515=SMKN_10_-_Fadhil",
-    "enableFaultInjection": false,
     "tags": []
 }
