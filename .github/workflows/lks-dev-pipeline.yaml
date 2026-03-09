@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - "dev"
-    paths:
-      - .github/workflows/lks-dev-pipeline.yaml
-      - "worker/**"
 
 env:
   AWS_REGION: us-east-1                 
@@ -53,7 +50,7 @@ jobs:
       run: echo "Build Success"
       
   master:
-    name:  Pull Image on Master
+    name: Example Pull Image on node1
     needs: build
     runs-on: master
     steps:
@@ -87,7 +84,7 @@ jobs:
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
 
   node1:
-    name: Pull Image on node1
+    name: Example Pull Image on node1
     needs: build
     runs-on: node1
     steps:
@@ -121,7 +118,7 @@ jobs:
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
 
   node2:
-    name:  Pull Image on node2
+    name: Example Pull Image on node1
     needs: build
     runs-on: node2
     steps:
@@ -155,7 +152,7 @@ jobs:
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
 
   deploy:  
-    name:  Deploy Application into docker swarm
+    name: Example Deploy Application into docker swarm
     needs: [master, node1, node2]
     runs-on: master
     steps:
