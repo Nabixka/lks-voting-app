@@ -51,7 +51,7 @@ namespace Worker
                         if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
                         {
                             Console.WriteLine("Reconnecting DB");
-                            pgsql = OpenDbConnection("Server=lks-rds.cx9gktotdpii.us-east-1.rds.amazonaws.com;Username=admin123;Password=LKSNCC2024;Database=speaks;SSL Mode=Require;Trust Server Certificate=true;")
+                            pgsql = OpenDbConnection("Server=lks-rds.cx9gktotdpii.us-east-1.rds.amazonaws.com;Username=admin123;Password=LKSNCC2024;Database=speaks;SSL Mode=Require;Trust Server Certificate=true;");
                         }
                         else
                         { // Normal +1 vote requested
