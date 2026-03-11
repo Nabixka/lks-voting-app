@@ -214,7 +214,7 @@ jobs:
     notif:
         name: Sent Notification
         runs-on: ubuntu-latest
-        needs: workers
+        needs: [workers, vote, result]
         environment: Production
         steps:    
         - name: Configure AWS Credentials
