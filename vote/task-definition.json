@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:205122682501:task-definition/lks-td-vote:3",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:205122682501:task-definition/lks-td-vote:6",
     "containerDefinitions": [
         {
             "name": "lks-vote-container",
-            "image": "205122682501.dkr.ecr.us-east-1.amazonaws.com/voting-app:worker-prod-latest",
+            "image": "205122682501.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest",
             "cpu": 0,
             "portMappings": [
                 {
@@ -37,7 +37,7 @@
     "taskRoleArn": "arn:aws:iam::205122682501:role/LabRole",
     "executionRoleArn": "arn:aws:iam::205122682501:role/LabRole",
     "networkMode": "awsvpc",
-    "revision": 3,
+    "revision": 6,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -84,7 +84,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2026-03-09T04:02:27.393Z",
+    "registeredAt": "2026-03-11T02:34:48.855Z",
     "registeredBy": "arn:aws:sts::205122682501:assumed-role/voclabs/user4825515=SMKN_10_-_Fadhil",
     "tags": []
 }

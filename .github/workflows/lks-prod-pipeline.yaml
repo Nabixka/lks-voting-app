@@ -14,11 +14,11 @@ env:
   WORKER_TASK_DEFINITION: worker/task-definition.json
   WORKER_CONTAINER_NAME: lks-worker-container
 
-  ECS_SERVICE_RESULT: lks-td-result-service-gpo9fo6y         
+  ECS_SERVICE_RESULT: lks-result-service       
   RESULT_TASK_DEFINITION: result/task-definition.json
   RESULT_CONTAINER_NAME: lks-result-container
 
-  ECS_SERVICE_VOTE: lks-td-vote-service-4s8epnbh
+  ECS_SERVICE_VOTE: lks-vote-service
   VOTE_TASK_DEFINITION: vote/task-definition.json
   VOTE_CONTAINER_NAME: lks-vote-container
 
@@ -56,6 +56,7 @@ jobs:
             WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
             RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
             VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+            ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           run: |
             docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG --build-arg aws_region=${{ env.AWS_REGION }} --build-arg copy_or_mount="copy" -f worker/Dockerfile ./worker
             docker push $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG
@@ -72,8 +73,8 @@ jobs:
         - name: End Build
           run: echo "Build Success"
 
-    deploy:
-        name: Example Deploy Application to Production
+    workers:
+        name: Deploy Application to Production
         runs-on: ubuntu-latest
         needs: build
         environment: Production
@@ -99,14 +100,9 @@ jobs:
             ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
             ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
             WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
-            VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
-            RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
           run: |
             echo "::set-output name=worker_image::$ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG"
-            echo "::set-output name=vote_image::$ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG"
-            echo "::set-output name=result_image::$ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG"
-            
-        # Worker
+
         - name: Fill in the new image ID in the Amazon ECS task definition (Worker)
           id: task-def-worker
           uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -122,9 +118,38 @@ jobs:
             service: ${{ env.ECS_SERVICE_WORKER }}
             cluster: ${{ env.ECS_CLUSTER }}
             wait-for-service-stability: true
+    
+    vote:
+        name: Deploy Application to Production
+        runs-on: ubuntu-latest
+        needs: build
+        environment: Production
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+        
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+            aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+            aws-region: ${{ env.AWS_REGION }}
 
-        # Vote
-        - name: Fill in the new image ID in the Amazon ECS task definition (Vote)
+        - name: Login to Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v1
+
+        - name: Set Variable
+          id: set-vars
+          env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+            VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+          run: |
+            echo "::set-output name=vote_image::$ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG"
+
+        - name: Fill in the new image ID in the Amazon ECS task definition (vote)
           id: task-def-vote
           uses: aws-actions/amazon-ecs-render-task-definition@v1
           with:
@@ -132,16 +157,45 @@ jobs:
             container-name: ${{ env.VOTE_CONTAINER_NAME }}
             image: ${{ steps.set-vars.outputs.vote_image }}
 
-        - name: Deploy Amazon ECS task definition Vote
+        - name: Deploy Amazon ECS task definition Worker
           uses: aws-actions/amazon-ecs-deploy-task-definition@v1
           with:
             task-definition: ${{ steps.task-def-vote.outputs.task-definition }}
-            service: ${{ env.ECS_SERVICE_VOTE }}
+            service: ${{ env.ECS_SERVICE_WORKER }}
             cluster: ${{ env.ECS_CLUSTER }}
             wait-for-service-stability: true
+    
+    result:
+        name: Deploy Application to Production
+        runs-on: ubuntu-latest
+        needs: build
+        environment: Production
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v3
         
-        # Result
-        - name: Fill in the new image ID in the Amazon ECS task definition (Result)
+        - name: Configure AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+            aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+            aws-region: ${{ env.AWS_REGION }}
+
+        - name: Login to Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v1
+
+        - name: Set Variable
+          id: set-vars
+          env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+            RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
+          run: |
+            echo "::set-output name=result_image::$ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG"
+
+        - name: Fill in the new image ID in the Amazon ECS task definition (result)
           id: task-def-result
           uses: aws-actions/amazon-ecs-render-task-definition@v1
           with:
@@ -149,18 +203,18 @@ jobs:
             container-name: ${{ env.RESULT_CONTAINER_NAME }}
             image: ${{ steps.set-vars.outputs.result_image }}
 
-        - name: Deploy Amazon ECS task definition Result
+        - name: Deploy Amazon ECS task definition Worker
           uses: aws-actions/amazon-ecs-deploy-task-definition@v1
           with:
             task-definition: ${{ steps.task-def-result.outputs.task-definition }}
-            service: ${{ env.ECS_SERVICE_RESULT }}
+            service: ${{ env.ECS_SERVICE_WORKER }}
             cluster: ${{ env.ECS_CLUSTER }}
             wait-for-service-stability: true
 
     notif:
         name: Sent Notification
         runs-on: ubuntu-latest
-        needs: deploy
+        needs: workers
         environment: Production
         steps:    
         - name: Configure AWS Credentials
