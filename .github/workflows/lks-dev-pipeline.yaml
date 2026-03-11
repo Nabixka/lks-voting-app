@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-1                 
-  ECR_REPOSITORY: voting-app 
+  ECR_REPOSITORY: lks-voting-image
   ENV: "dev"
 
 permissions:
@@ -41,16 +41,27 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
+        VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+        RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
+        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG --build-arg aws_region=${{ env.AWS_REGION }} --build-arg copy_or_mount="copy" -f worker/Dockerfile ./worker
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG
-        echo "::set-output name=worker_image::$ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG"
+        echo "::set-output name=worker_image::$ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG
+
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG --build-arg aws_region=${{ env.AWS_REGION }} --build-arg copy_or_mount="copy" -f result/Dockerfile ./result
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG
+        echo "::set-output name=result_image::$ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG
+
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG --build-arg aws_region=${{ env.AWS_REGION }} --build-arg copy_or_mount="copy" -f vote/Dockerfile ./vote
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG
+        echo "::set-output name=vote_image::$ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG"
 
     - name: End Build
       run: echo "Build Success"
       
   master:
-    name: Example Pull Image on node1
+    name: Pull Image On Master
     needs: build
     runs-on: master
     steps:
@@ -77,14 +88,19 @@ jobs:
         id: pull-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: voting-app
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
+          RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
+          VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+
         # Build docker images for vote module and push it to ECR so that it can be deployed to EKS
         run: |
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG
 
   node1:
-    name: Example Pull Image on node1
+    name: Pull Image On Node1
     needs: build
     runs-on: node1
     steps:
@@ -111,14 +127,19 @@ jobs:
         id: pull-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: voting-app
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
+          RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
+          VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+
         # Build docker images for vote module and push it to ECR so that it can be deployed to EKS
         run: |
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG
 
   node2:
-    name: Example Pull Image on node1
+    name: Pull Image On Node2
     needs: build
     runs-on: node2
     steps:
@@ -145,14 +166,19 @@ jobs:
         id: pull-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: voting-app
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           WORKER_IMAGE_TAG: worker-${{ env.ENV }}-latest
+          RESULT_IMAGE_TAG: result-${{ env.ENV }}-latest
+          VOTE_IMAGE_TAG: vote-${{ env.ENV }}-latest
+
         # Build docker images for vote module and push it to ECR so that it can be deployed to EKS
         run: |
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$WORKER_IMAGE_TAG   
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$VOTE_IMAGE_TAG
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$RESULT_IMAGE_TAG
 
   deploy:  
-    name: Example Deploy Application into docker swarm
+    name: Deploy Application into docker swarm
     needs: [master, node1, node2]
     runs-on: master
     steps:
