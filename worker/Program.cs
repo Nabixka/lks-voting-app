@@ -16,6 +16,7 @@ namespace Worker
         {
             try
             {
+                // edit
                 var options = new ConfigurationOptions
                 {
                     EndPoints = { "master.lks-redis.bxte0o.use1.cache.amazonaws.com:6379" },
@@ -39,7 +40,7 @@ namespace Worker
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected) {
                         Console.WriteLine("Reconnecting Redis");
-                        redisConn = OpenRedisConnection("redis");
+                        redisConn = ConnectionMultiplexer.Connect(options);
                         redis = redisConn.GetDatabase();
                     }
                     string json = redis.ListLeftPopAsync("votes").Result;
@@ -51,6 +52,7 @@ namespace Worker
                         if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
                         {
                             Console.WriteLine("Reconnecting DB");
+                            // edit
                             pgsql = OpenDbConnection("Server=lks-rds.cx9gktotdpii.us-east-1.rds.amazonaws.com;Username=admin123;Password=LKSNCC2024;Database=speaks;SSL Mode=Require;Trust Server Certificate=true;");
                         }
                         else
@@ -118,7 +120,8 @@ namespace Worker
                 try
                 {
                     Console.Error.WriteLine("Connecting to redis");
-                    return ConnectionMultiplexer.Connect(ipAddress);
+                    // edit
+                    return ConnectionMultiplexer.Connect($"{ipAddress},ssl=True");
                 }
                 catch (RedisConnectionException)
                 {

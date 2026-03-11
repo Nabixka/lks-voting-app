@@ -18,7 +18,7 @@ io.on('connection', function (socket) {
 });
 
 var pool = new Pool({
-  connectionString: 'postgres://admin123:LKSNCC2024@lks-rds.cx9gktotdpii.us-east-1.rds.amazonaws.com/postgres?sslmode=no-verify'
+  connectionString: 'postgresql://admin123:LKSNCC2024@lks-rds.cx9gktotdpii.us-east-1.rds.amazonaws.com/postgres?sslmode=no-verify'
 });
 
 async.retry(
